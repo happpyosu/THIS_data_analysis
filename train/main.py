@@ -1,10 +1,10 @@
-from model.text_model import load_image_text_data, load_tweet_text_data, TextDataset, TextPreprocessor, LSTMNet
+from model.text_model import load_image_text_data, load_tweet_text_data, TextDataset, TextPreprocessor, LSTMNet, tweet_text_data_list
 from torch.utils.data import DataLoader
 
 
 def main():
     sen_len = 30
-    train_x = load_tweet_text_data()
+    train_x = tweet_text_data_list
     text_preprocess = TextPreprocessor(train_x, sen_len)
     embedding_matrix = text_preprocess.make_embedding()
 
