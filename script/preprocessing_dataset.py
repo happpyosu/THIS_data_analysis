@@ -8,6 +8,11 @@ def make_dirs():
     for i in range(6):
         os.mkdir(base_dir + str(i))
 
+def make_test_dirs():
+    base_dir = '../dataset/test/'
+    for i in range(6):
+        os.mkdir(base_dir + str(i))
+
 
 def statistic_data_length():
     base_dir = '../dataset/train/'
@@ -47,5 +52,28 @@ def dispatch_images():
         print('src_path: {} -------> dst_path: {}, final label is: {}'.format(src_path, dst_path, which_dir))
 
 
+def build_test_dataset():
+
+    for i in range(6):
+
+        train_base_dir = '../dataset/train/' + str(i) + '/'
+        test_base_dir = '../dataset/test/' + str(i) + '/'
+
+        train_file_list = os.listdir(train_base_dir)
+        test_length = int(len(train_file_list) * 0.1)
+
+        for j in range(test_length):
+            file_name = train_file_list[j]
+
+            src_path = train_base_dir + file_name
+            dst_path = test_base_dir + file_name
+
+            shutil.move(src_path, dst_path)
+            break
+
+        break
+
+
 if __name__ == '__main__':
-    statistic_data_length()
+    make_test_dirs()
+    build_test_dataset()
