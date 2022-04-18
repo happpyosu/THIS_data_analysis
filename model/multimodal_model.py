@@ -130,16 +130,26 @@ class FCMModel(nn.Module):
 
 
 def train_FCM(image_type=0):
+    # training parameters config
+    use_gpu = torch.cuda.is_available()
     train_epoch = 20
     batch_size = 20
+    print_loss_every_batch = 20
 
     loss_func = nn.CrossEntropyLoss()
+    if use_gpu:
+        loss_func = loss_func.cuda()
+
     fcm_model = FCMModel()
+    if use_gpu:
+        fcm_model = fcm_model.cuda()
+
     optimizer = torch.optim.Adam(fcm_model.parameters(), lr=0.001)
     THIS_dataset = THISDataset(image_type)
     train_loader = DataLoader(dataset=THIS_dataset, batch_size=batch_size, shuffle=True, num_workers=0)
 
     for epoch in range(train_epoch):
+        print('--------------start training epoch {}--------------'.format(epoch))
         for i, data in enumerate(train_loader):
             # train one step on positive data
             p_data = data[0]
@@ -147,14 +157,21 @@ def train_FCM(image_type=0):
             p_tweet_text = p_data[1].long()
             p_image_text = p_data[2].long()
 
+            if use_gpu:
+                p_image = p_image.cuda()
+                p_tweet_text = p_tweet_text.cuda()
+                p_image_text = p_image_text.cuda()
+
             pred = fcm_model.forward(p_image, p_tweet_text, p_image_text)
             target = torch.ones(batch_size, dtype=torch.long)
+
+            if use_gpu:
+                target = target.cuda()
+
             loss = loss_func(pred, target)
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-
-            print('training loss: {}'.format(loss.item()))
 
             # train one step on negative data
             n_data = data[1]
@@ -162,13 +179,25 @@ def train_FCM(image_type=0):
             n_tweet_text = n_data[1].long()
             n_image_text = n_data[2].long()
 
+            if use_gpu:
+                n_image = n_image.cuda()
+                n_tweet_text = n_tweet_text.cuda()
+                n_image_text = n_image_text.cuda()
+
             pred = fcm_model.forward(n_image, n_tweet_text, n_image_text)
             target = torch.zeros(batch_size, dtype=torch.long)
-            loss = loss_func(pred, target)
+
+            if use_gpu:
+                target = target.cuda()
+
+            loss2 = loss_func(pred, target)
             optimizer.zero_grad()
-            loss.backward()
+            loss2.backward()
             optimizer.step()
-            print('training loss: {}'.format(loss.item()))
+
+            if i % print_loss_every_batch == 0:
+                print('[epoch #{}] training loss on batch #{}: {}'.format(epoch, i, (loss2.item() + loss.item()) / 2))
+        torch.save(fcm_model, '../save/fcm_epoch_{}.pkl'.format(epoch))
 
 
 if __name__ == '__main__':
