@@ -200,7 +200,7 @@ def train_FCM(image_type=0):
                 print('[epoch #{}] training loss on batch #{}: {}'.format(epoch, i, (loss2.item() + loss.item()) / 2))
 
         if epoch % save_weight_every_epoch == 0 and epoch > 0:
-            torch.save(fcm_model, '../save/fcm_epoch_{}.pkl'.format(epoch))
+            torch.save(fcm_model, '../save/fcm_{}_epoch_{}.pkl'.format(image_type, epoch))
 
 
 if __name__ == '__main__':
