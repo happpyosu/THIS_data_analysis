@@ -146,7 +146,6 @@ class TextPreprocessor:
     def make_embedding(self):
         print('--------------Start processing word embedding--------------')
         for i, word in enumerate(self.embedding.wv.index_to_key):
-            print('#{}, word: {}'.format(i, word))
             self.word2idx[word] = len(self.word2idx)
             self.idx2word.append(word)
             self.embedding_matrix.append(self.embedding.wv[word])

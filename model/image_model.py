@@ -5,7 +5,6 @@ from text_model import TextPreprocessor, load_tweet_text_data, load_image_text_d
 
 
 class InceptionV3FeatureExtractor(nn.Module):
-    # 构造函数，声明模型的组成
     def __init__(self):
         super(InceptionV3FeatureExtractor, self).__init__()
         self.inception_v3 = models.inception_v3(pretrained=True)
@@ -13,6 +12,7 @@ class InceptionV3FeatureExtractor(nn.Module):
         self.flatten = nn.Flatten()
 
     def forward(self, x):
+        # 遍历
         for name, module in self.inception_v3.named_children():
             if name == 'AuxLogits':
                 continue
@@ -24,11 +24,23 @@ class InceptionV3FeatureExtractor(nn.Module):
 
 
 if __name__ == '__main__':
-    model = InceptionV3FeatureExtractor()
-    input_tensor = torch.randn(2, 3, 512, 512) # (batch_size, channel, height, width)
-    out = model(input_tensor)
+    # inception_v3 = models.inception_v3(pretrained=True)
+    # print(inception_v3)
 
+    fl = nn.Flatten(start_dim=1, end_dim=2)
+
+    tensor = torch.randn(1, 1, 2048)
+
+    out = fl(tensor)
     print(out.shape)
+
+
+    # model = InceptionV3FeatureExtractor()
+    #
+    # input_tensor = torch.randn(2, 3, 512, 512) # (batch_size, channel, height, width)
+    # out = model(input_tensor) # __call__
+    #
+    # print(out.shape)
 
     # print(out.shape)
     # model = LSTMNet()

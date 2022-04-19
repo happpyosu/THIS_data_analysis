@@ -41,13 +41,4 @@ class Temp:
 
 
 if __name__ == '__main__':
-    model = MyModel()
-    x_1 = torch.randn(3, 224, 224) # [bs]
-    x_2 = torch.randn(3, 224, 224)
-
-    x_1 = torch.reshape(x_1, [1, 3, 224, 224])
-    x_2 = torch.reshape(x_2, [1, 3, 224, 224])
-
-    input = torch.cat([x_1, x_2], dim=0)
-
-    print(input.shape)
+    pass

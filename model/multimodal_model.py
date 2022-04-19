@@ -11,7 +11,7 @@ import random
 
 
 class THISDataset(data.Dataset):
-    def __init__(self, image_type, tweet_text_dict=tweet_text_data_dict, image_text_dict=image_text_data_dict):
+    def __init__(self, image_type, tweet_text_dict=tweet_text_data_dict, image_text_dict=image_text_data_dict, mode='train'):
         """
         :param image_type: the image type, 0 - NotHate, 1 - Racist, 2 - Sexist, 3 - Homophobe, 4 - Religion, 5 - OtherHate.
         :param tweet_text_dict: tweet text dict in the dataset, key is the tweet id, value is the word list of that text.
@@ -23,13 +23,13 @@ class THISDataset(data.Dataset):
                 continue
             negative_type_list.append(i)
 
-        self.image_base_dir = '../dataset/train/' + str(image_type) + '/'
+        self.image_base_dir = '../dataset/' + mode + '/' + str(image_type) + '/'
         self.image_data_list = os.listdir(self.image_base_dir)
 
         self.negative_base_dir_list = []
         self.negative_data_list = []
         for negative_type in negative_type_list:
-            base_dir = '../dataset/train/' + str(negative_type) + '/'
+            base_dir = '../dataset/' + mode + '/' + str(negative_type) + '/'
             self.negative_base_dir_list.append(base_dir)
             self.negative_data_list.append(os.listdir(base_dir))
 
@@ -109,7 +109,8 @@ class FCMModel(nn.Module):
             nn.LeakyReLU(),
             nn.Linear(1024, 512),
             nn.LeakyReLU(),
-            nn.Linear(512, 2),
+            nn.Linear(512, 1),
+            nn.Sigmoid()
         )
 
     def forward(self, img, image_text, tweet_text):
@@ -129,6 +130,59 @@ class FCMModel(nn.Module):
         return out
 
 
+def eval_FCM(image_type=0):
+    # evaluation parameters config
+    use_gpu = torch.cuda.is_available()
+    batch_size = 10
+
+    acc_matrix = [[0] * 5 for _ in range(6)]
+    for i in range(6):
+        fcm_model = torch.load('../save/fcm_{}_epoch_50.pkl')
+
+        for k in range(6):
+            ds = THISDataset(image_type=k, mode='test')
+            train_loader = DataLoader(dataset=ds, batch_size=batch_size, shuffle=True, num_workers=0,
+                                      drop_last=True)
+
+            total_cnt = 0
+            right = 0
+            fault = 0
+
+            for j, data in enumerate(train_loader):
+                p_data = data[0]
+                p_image = p_data[0]
+                p_tweet_text = p_data[1].long()
+                p_image_text = p_data[2].long()
+
+                if use_gpu:
+                    p_image = p_image.cuda()
+                    p_tweet_text = p_tweet_text.cuda()
+                    p_image_text = p_image_text.cuda()
+
+                pred = fcm_model.forward(p_image, p_tweet_text, p_image_text)
+                pred = torch.squeeze(pred)
+                pred_list = pred.tolist()
+
+                if j == image_type:
+                    for res in pred_list:
+                        total_cnt += 1
+                        if res >= 0.5:
+                            right += 1
+                        else:
+                            fault += 1
+                else:
+                    for res in pred_list:
+                        total_cnt += 1
+                        if res < 0.5:
+                            right += 1
+                        else:
+                            fault += 1
+
+            acc_matrix[i][k] = right / total_cnt
+
+    return acc_matrix
+
+
 def train_FCM(image_type=0):
     # training parameters config
     use_gpu = torch.cuda.is_available()
@@ -137,7 +191,7 @@ def train_FCM(image_type=0):
     print_loss_every_batch = 20
     save_weight_every_epoch = 5
 
-    loss_func = nn.CrossEntropyLoss()
+    loss_func = nn.BCELoss()
     if use_gpu:
         loss_func = loss_func.cuda()
 
@@ -164,7 +218,8 @@ def train_FCM(image_type=0):
                 p_image_text = p_image_text.cuda()
 
             pred = fcm_model.forward(p_image, p_tweet_text, p_image_text)
-            target = torch.ones(batch_size, dtype=torch.long)
+            pred = torch.squeeze(pred)
+            target = torch.ones(batch_size, dtype=torch.float)
 
             if use_gpu:
                 target = target.cuda()
@@ -186,7 +241,8 @@ def train_FCM(image_type=0):
                 n_image_text = n_image_text.cuda()
 
             pred = fcm_model.forward(n_image, n_tweet_text, n_image_text)
-            target = torch.zeros(batch_size, dtype=torch.long)
+            pred = torch.squeeze(pred)
+            target = torch.zeros(batch_size, dtype=torch.float)
 
             if use_gpu:
                 target = target.cuda()
@@ -199,7 +255,7 @@ def train_FCM(image_type=0):
             if i % print_loss_every_batch == 0:
                 print('[epoch #{}] training loss on batch #{}: {}'.format(epoch, i, (loss2.item() + loss.item()) / 2))
 
-        if epoch % save_weight_every_epoch == 0 and epoch > 0:
+        if (epoch+1) % save_weight_every_epoch == 0:
             torch.save(fcm_model, '../save/fcm_{}_epoch_{}.pkl'.format(image_type, epoch))
 
 
