@@ -23,7 +23,7 @@ class TextDataset(data.Dataset):
 
 
 def load_image_text_data():
-    token = re.compile('[A-Za-z]+|[!?,.]]')
+    token = re.compile('[A-Za-z]+|[!?,.]]') # 正则表达式
     base_dir = '../MMHS150K/img_txt/'
     json_file_list = os.listdir(base_dir)
     x = []
@@ -206,5 +206,6 @@ text_preprocessor = TextPreprocessor(tweet_text_data_list+image_text_data_list)
 embedding_matrix = text_preprocessor.make_embedding()
 
 if __name__ == '__main__':
-    sentence_embedding_dict = text_preprocessor.get_sentence_word2idx_dict(tweet_text_data_dict)
-    print(sentence_embedding_dict['1116043441652236288'].shape)
+    # sentence_embedding_dict = text_preprocessor.get_sentence_word2idx_dict(tweet_text_data_dict)
+    # print(sentence_embedding_dict['1116043441652236288'].shape)
+    load_image_text_data()

@@ -132,9 +132,10 @@ class FCMModel(nn.Module):
 def train_FCM(image_type=0):
     # training parameters config
     use_gpu = torch.cuda.is_available()
-    train_epoch = 20
-    batch_size = 20
+    train_epoch = 100
+    batch_size = 64
     print_loss_every_batch = 20
+    save_weight_every_epoch = 5
 
     loss_func = nn.CrossEntropyLoss()
     if use_gpu:
@@ -146,7 +147,7 @@ def train_FCM(image_type=0):
 
     optimizer = torch.optim.Adam(fcm_model.parameters(), lr=0.001)
     THIS_dataset = THISDataset(image_type)
-    train_loader = DataLoader(dataset=THIS_dataset, batch_size=batch_size, shuffle=True, num_workers=0)
+    train_loader = DataLoader(dataset=THIS_dataset, batch_size=batch_size, shuffle=True, num_workers=0, drop_last=True)
 
     for epoch in range(train_epoch):
         print('--------------start training epoch {}--------------'.format(epoch))
@@ -197,7 +198,9 @@ def train_FCM(image_type=0):
 
             if i % print_loss_every_batch == 0:
                 print('[epoch #{}] training loss on batch #{}: {}'.format(epoch, i, (loss2.item() + loss.item()) / 2))
-        torch.save(fcm_model, '../save/fcm_epoch_{}.pkl'.format(epoch))
+
+        if epoch % save_weight_every_epoch == 0 and epoch > 0:
+            torch.save(fcm_model, '../save/fcm_epoch_{}.pkl'.format(epoch))
 
 
 if __name__ == '__main__':

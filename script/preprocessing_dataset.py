@@ -61,7 +61,7 @@ def build_test_dataset():
 
         train_file_list = os.listdir(train_base_dir)
         test_length = int(len(train_file_list) * 0.1)
-
+        print(test_length)
         for j in range(test_length):
             file_name = train_file_list[j]
 
@@ -75,5 +75,5 @@ def build_test_dataset():
 
 
 if __name__ == '__main__':
-    make_test_dirs()
+    # make_test_dirs()
     build_test_dataset()
