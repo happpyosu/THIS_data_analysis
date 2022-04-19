@@ -117,6 +117,9 @@ class FCMModel(nn.Module):
         # image feature (bs, 2048)
         img_feat = self.inception_v3(img)
 
+        # detach from inception v3 model
+        img_feat = img_feat.detach()
+
         # image_text feature (bs, 300)
         text_input = torch.cat([image_text, tweet_text], dim=0)
         text_feat = self.lstm(text_input)
@@ -256,7 +259,7 @@ def train_FCM(image_type=0):
                 print('[epoch #{}] training loss on batch #{}: {}'.format(epoch, i, (loss2.item() + loss.item()) / 2))
 
         if (epoch+1) % save_weight_every_epoch == 0:
-            torch.save(fcm_model, '../save/fcm_{}_epoch_{}.pkl'.format(image_type, epoch))
+            torch.save(fcm_model, '../save/fcm_{}_epoch_{}.pkl'.format(image_type, epoch+1))
 
 
 if __name__ == '__main__':
