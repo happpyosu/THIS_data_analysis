@@ -145,7 +145,7 @@ def eval_FCM(image_type=0):
         for k in range(6):
             ds = THISDataset(image_type=k, mode='test')
             train_loader = DataLoader(dataset=ds, batch_size=batch_size, shuffle=True, num_workers=0,
-                                      drop_last=True)
+                                      drop_last=False)
 
             print('len dataset: {}'.format(len(ds)))
 
