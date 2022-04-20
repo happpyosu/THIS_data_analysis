@@ -138,7 +138,7 @@ def eval_FCM(image_type=0):
     use_gpu = torch.cuda.is_available()
     batch_size = 32
 
-    acc_matrix = [[0] * 5 for _ in range(6)]
+    acc_matrix = [[0] * 6 for _ in range(6)]
     for i in range(6):
         fcm_model = torch.load('../save/fcm_{}_epoch_60.pkl'.format(image_type), map_location=None if use_gpu else 'cpu')
 
