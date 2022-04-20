@@ -69,9 +69,7 @@ def build_test_dataset():
             dst_path = test_base_dir + file_name
 
             shutil.move(src_path, dst_path)
-            break
 
-        break
 
 
 if __name__ == '__main__':

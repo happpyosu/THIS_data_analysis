@@ -136,16 +136,18 @@ class FCMModel(nn.Module):
 def eval_FCM(image_type=0):
     # evaluation parameters config
     use_gpu = torch.cuda.is_available()
-    batch_size = 10
+    batch_size = 32
 
     acc_matrix = [[0] * 5 for _ in range(6)]
     for i in range(6):
-        fcm_model = torch.load('../save/fcm_{}_epoch_50.pkl')
+        fcm_model = torch.load('../save/fcm_{}_epoch_60.pkl'.format(image_type), map_location=None if use_gpu else 'cpu')
 
         for k in range(6):
             ds = THISDataset(image_type=k, mode='test')
             train_loader = DataLoader(dataset=ds, batch_size=batch_size, shuffle=True, num_workers=0,
                                       drop_last=True)
+
+            print('len dataset: {}'.format(len(ds)))
 
             total_cnt = 0
             right = 0
@@ -263,7 +265,8 @@ def train_FCM(image_type=0):
 
 
 if __name__ == '__main__':
-    train_FCM(1)
+    # train_FCM(1)
+    eval_FCM(1)
 
 
 
