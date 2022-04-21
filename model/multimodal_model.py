@@ -94,6 +94,29 @@ class THISDataset(data.Dataset):
         return len(self.image_data_list)
 
 
+class FCMModelWithoutText(nn.Module):
+    def __init__(self):
+        super(FCMModelWithoutText, self).__init__()
+
+        self.inception_v3 = InceptionV3FeatureExtractor()
+
+        # fc model
+        self.fc = nn.Sequential(
+            nn.Linear(2048, 1024),
+            nn.LeakyReLU(),
+            nn.Linear(1024, 512),
+            nn.LeakyReLU(),
+            nn.Linear(512, 1),
+            nn.Sigmoid()
+        )
+
+    def forward(self, img):
+        img_feat = self.inception_v3(img)
+        img_feat = img_feat.detach()
+        out = self.fc(img_feat)
+        return out
+
+
 class FCMModel(nn.Module):
     def __init__(self):
         super(FCMModel, self).__init__()
@@ -189,6 +212,74 @@ def eval_FCM():
     return acc_matrix
 
 
+def train_FCMWithoutText(image_type=0):
+    # training parameters config
+    use_gpu = torch.cuda.is_available()
+    train_epoch = 100
+    batch_size = 64
+    print_loss_every_batch = 20
+    save_weight_every_epoch = 5
+
+    loss_func = nn.BCELoss()
+    if use_gpu:
+        loss_func = loss_func.cuda()
+
+    fcm_model = FCMModelWithoutText()
+    if use_gpu:
+        fcm_model = fcm_model.cuda()
+
+    optimizer = torch.optim.Adam(fcm_model.parameters(), lr=0.001)
+    THIS_dataset = THISDataset(image_type)
+    train_loader = DataLoader(dataset=THIS_dataset, batch_size=batch_size, shuffle=True, num_workers=0, drop_last=True)
+
+    for epoch in range(train_epoch):
+        print('--------------start training epoch {}--------------'.format(epoch))
+        for i, data in enumerate(train_loader):
+            # train one step on positive data
+            p_data = data[0]
+            p_image = p_data[0]
+
+            if use_gpu:
+                p_image = p_image.cuda()
+
+            pred = fcm_model.forward(p_image)
+            pred = torch.squeeze(pred)
+            target = torch.ones(batch_size, dtype=torch.float)
+
+            if use_gpu:
+                target = target.cuda()
+
+            loss = loss_func(pred, target)
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+            # train one step on negative data
+            n_data = data[1]
+            n_image = n_data[0]
+
+            if use_gpu:
+                n_image = n_image.cuda()
+
+            pred = fcm_model.forward(n_image)
+            pred = torch.squeeze(pred)
+            target = torch.zeros(batch_size, dtype=torch.float)
+
+            if use_gpu:
+                target = target.cuda()
+
+            loss2 = loss_func(pred, target)
+            optimizer.zero_grad()
+            loss2.backward()
+            optimizer.step()
+
+            if i % print_loss_every_batch == 0:
+                print('[epoch #{}] training loss on batch #{}: {}'.format(epoch, i, (loss2.item() + loss.item()) / 2))
+
+        if (epoch+1) % save_weight_every_epoch == 0:
+            torch.save(fcm_model, '../save/fcm_without_text_{}_epoch_{}.pkl'.format(image_type, epoch+1))
+
+
 def train_FCM(image_type=0):
     # training parameters config
     use_gpu = torch.cuda.is_available()
@@ -267,7 +358,8 @@ def train_FCM(image_type=0):
 
 if __name__ == '__main__':
     # train_FCM(1)
-    print(eval_FCM())
+    # print(eval_FCM())
+    train_FCMWithoutText(1)
 
 
 
