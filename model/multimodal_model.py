@@ -267,7 +267,7 @@ def train_FCM(image_type=0):
 
 if __name__ == '__main__':
     # train_FCM(1)
-    print(eval_FCM(1))
+    print(eval_FCM())
 
 
 
