@@ -133,14 +133,15 @@ class FCMModel(nn.Module):
         return out
 
 
-def eval_FCM(image_type=0):
+def eval_FCM():
     # evaluation parameters config
     use_gpu = torch.cuda.is_available()
     batch_size = 32
 
     acc_matrix = [[0] * 6 for _ in range(6)]
     for i in range(6):
-        fcm_model = torch.load('../save/fcm_{}_epoch_60.pkl'.format(image_type), map_location=None if use_gpu else 'cpu')
+        print('evaluating the #{} model'.format(i))
+        fcm_model = torch.load('../save/fcm_{}_epoch_50.pkl'.format(i), map_location=None if use_gpu else 'cpu')
 
         for k in range(6):
             ds = THISDataset(image_type=k, mode='test')
@@ -153,7 +154,7 @@ def eval_FCM(image_type=0):
             right = 0
             fault = 0
 
-            for j, data in enumerate(train_loader):
+            for _, data in enumerate(train_loader):
                 p_data = data[0]
                 p_image = p_data[0]
                 p_tweet_text = p_data[1].long()
@@ -168,7 +169,7 @@ def eval_FCM(image_type=0):
                 pred = torch.squeeze(pred)
                 pred_list = pred.tolist()
 
-                if j == image_type:
+                if k == i:
                     for res in pred_list:
                         total_cnt += 1
                         if res >= 0.5:
