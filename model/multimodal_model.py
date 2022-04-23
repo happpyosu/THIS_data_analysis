@@ -156,6 +156,57 @@ class FCMModel(nn.Module):
         return out
 
 
+def eval_FCM_without_text():
+    print('start evaluating the #{} model'.format(i))
+    # evaluation parameters config
+    use_gpu = torch.cuda.is_available()
+    batch_size = 128
+
+    acc_matrix = [[0] * 6 for _ in range(6)]
+    for i in range(1, 6):
+        print('evaluating the #{} model'.format(i))
+        fcm_without_text_model = torch.load('../save/fcm_without_text_{}_epoch_50.pkl'.format(i), map_location=None if use_gpu else 'cpu')
+
+        for k in range(6):
+            ds = THISDataset(image_type=k, mode='test')
+            train_loader = DataLoader(dataset=ds, batch_size=batch_size, shuffle=True, num_workers=0,
+                                      drop_last=False)
+            print('len dataset: {}'.format(len(ds)))
+            total_cnt = 0
+            right = 0
+            fault = 0
+
+            for _, data in enumerate(train_loader):
+                p_data = data[0]
+                p_image = p_data[0]
+
+                if use_gpu:
+                    p_image = p_image.cuda()
+
+                pred = fcm_without_text_model.forward(p_image)
+                pred = torch.squeeze(pred)
+                pred_list = pred.tolist()
+
+                if k == i:
+                    for res in pred_list:
+                        total_cnt += 1
+                        if res >= 0.5:
+                            right += 1
+                        else:
+                            fault += 1
+                else:
+                    for res in pred_list:
+                        total_cnt += 1
+                        if res < 0.5:
+                            right += 1
+                        else:
+                            fault += 1
+
+            acc_matrix[i][k] = right / total_cnt
+
+    return acc_matrix
+
+
 def eval_FCM():
     # evaluation parameters config
     use_gpu = torch.cuda.is_available()
