@@ -157,7 +157,6 @@ class FCMModel(nn.Module):
 
 
 def eval_FCM_without_text():
-    print('start evaluating the #{} model'.format(i))
     # evaluation parameters config
     use_gpu = torch.cuda.is_available()
     batch_size = 128
